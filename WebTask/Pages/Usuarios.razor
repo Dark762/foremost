@@ -1,0 +1,597 @@
+﻿@page "/"
+@using CrossCutting.DTO
+@using CrossCutting.DTO.Tarea
+@using CrossCutting.DTO.Usuario
+@using CrossCutting.Models
+@using System.Net
+@using WebTask.Utils
+@using Newtonsoft.Json
+@inject HttpClient Http
+@inject AppSettings Settings
+@code {
+    private List<Usuario> usuarios = new List<Usuario>();
+    private Usuario newUsuario = new Usuario();
+    private Usuario selectedUsuario = null;
+
+    private List<Tarea> tareas = new List<Tarea>();
+    private TareaCreateDTO newTarea = new TareaCreateDTO();
+    private Tarea selectedTarea = null;
+
+    private bool showTareas = false;
+
+    private List<Prioridad> prioridades = new List<Prioridad>();
+
+    private string apiKey;
+    private string apiUrl;
+
+    private string errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        apiKey = Settings.Settings.ApiKey;
+        apiUrl = Settings.Settings.ApiUrl;
+
+        await LoadUsuarios();
+        await LoadPrioridades();
+    }
+
+    private async Task LoadUsuarios()
+    {
+        try
+        {
+            HttpRequestMessage message = new HttpRequestMessage(HttpMethod.Get, apiUrl.BuilderURIService("usuarios/ListaUsuarios"));
+
+
+            message.Headers.Add("ApiKey", $"{apiKey}");
+
+            var response = await Http.SendAsync(message);
+            if (response.IsSuccessStatusCode)
+            {
+                string result = await response.Content.ReadAsStringAsync();
+                var objResult = JsonConvert.DeserializeObject<StatusResponse<IEnumerable<Usuario>>>(result);
+
+                if (objResult.Success)
+                    usuarios = objResult.Data.ToList();
+                else
+                    errorMessage = objResult.Message;
+            }
+            else
+            {
+                errorMessage = "Ocurrio un error al cargar usuariosen el servicio";
+
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Ocurrio un error al cargar usuariosen la web";
+        }
+    }
+
+    private async Task CreateUsuario()
+    {
+        try
+        {
+            HttpRequestMessage message = new HttpRequestMessage(HttpMethod.Post, apiUrl.BuilderURIService("Usuarios/CrearUsuario"));
+
+            var jsonContent = new StringContent(JsonConvert.SerializeObject(newUsuario), System.Text.Encoding.UTF8, "application/json");
+
+            message.Content = jsonContent;
+
+            message.Headers.Add("ApiKey", $"{apiKey}");
+
+
+            var response = await Http.SendAsync(message);
+
+
+            if (response.IsSuccessStatusCode)
+            {
+                string result = await response.Content.ReadAsStringAsync();
+                var objResult = JsonConvert.DeserializeObject<StatusResponse>(result);
+
+
+                if (objResult.Success)
+                {
+                    await LoadUsuarios();
+                    newUsuario = new Usuario();
+                }
+                else
+                {
+                    errorMessage = objResult.Message;
+                }
+
+            }
+            else
+            {
+                errorMessage = "Ocurrio un error al crear el usuario en el servicio.";
+
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Ocurrio un error al crear el usuario en la web.";
+        }
+
+
+
+    }
+
+    private async Task UpdateUsuario()
+    {
+        try
+        {
+
+            if (selectedUsuario != null)
+            {
+
+
+                HttpRequestMessage message = new HttpRequestMessage(HttpMethod.Post, apiUrl.BuilderURIService("Usuarios/ActualizarUsuario"));
+
+                message.Headers.Add("ApiKey", $"{apiKey}");
+
+                var response = await Http.SendAsync(message);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    string result = await response.Content.ReadAsStringAsync();
+                    var objResult = JsonConvert.DeserializeObject<StatusResponse>(result);
+
+
+                    if (objResult.Success)
+                    {
+                        selectedUsuario = null;
+                        await LoadUsuarios();
+                    }
+                    else
+                    {
+                        errorMessage = objResult.Message;
+                    }
+                }
+                else
+                {
+                    errorMessage = "Ocurrio un problema al actualizar el usuario en el servicio.";
+                }
+            }
+        }
+        catch
+        {
+            errorMessage = "Ocurrio un error al actualizar el usuario en la web.";
+        }
+
+    }
+
+    private async Task DeleteUsuario(int id)
+    {
+
+        try
+        {
+            var request = new UsuarioFilterDTO()
+                {
+                    Id = id
+                };
+
+            HttpRequestMessage message = new HttpRequestMessage(HttpMethod.Delete, apiUrl.BuilderURIService("Usuarios/BorrarUsuario"));
+
+            var jsonContent = new StringContent(JsonConvert.SerializeObject(request), System.Text.Encoding.UTF8, "application/json");
+
+            message.Content = jsonContent;
+
+            message.Headers.Add("ApiKey", $"{apiKey}");
+
+            var response = await Http.SendAsync(message);
+
+            if (response.IsSuccessStatusCode)
+            {
+                string result = await response.Content.ReadAsStringAsync();
+                var objResult = JsonConvert.DeserializeObject<StatusResponse>(result);
+
+                if (objResult.Success)
+                {
+                    await LoadUsuarios();
+                }
+                else
+                {
+                    errorMessage = objResult.Message;
+                }
+            }
+            else
+            {
+                errorMessage = "Ocurrio un problema al eliminar el usuario en servicio.";
+            }
+        }
+        catch
+        {
+            errorMessage = "Ocurrio un error al eliminar el usuario en la web.";
+        }
+
+
+    }
+
+    private void EditUsuario(Usuario usuario)
+    {
+        selectedUsuario = usuario;
+        showTareas = false;
+    }
+
+    private async Task LoadTareas(int usuarioId)
+    {
+        try
+        {
+
+            HttpRequestMessage message = new HttpRequestMessage(HttpMethod.Get, apiUrl.BuilderURIService($"/Tareas/ListaTareaPorUsuario?IdUsuario={usuarioId}"));
+
+            message.Headers.Add("ApiKey", $"{apiKey}");
+
+            var response = await Http.SendAsync(message);
+
+
+            if (response.IsSuccessStatusCode)
+            {
+                string result = await response.Content.ReadAsStringAsync();
+                var objResult = JsonConvert.DeserializeObject<StatusResponse<IEnumerable<Tarea>>>(result);
+                if (objResult.Success)
+                {
+                    tareas = objResult.Data.ToList();
+                }
+                else
+                {
+                    errorMessage = objResult.Message;
+                }
+            }
+            else
+            {
+                errorMessage = "Ocurrio un error al cargar las tareas en el servicio.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Ocurrio un error al cargar las tareas en la web.";
+        }
+    }
+
+    private async Task CreateTarea()
+    {
+        try
+        {
+            if (selectedUsuario != null)
+            {
+                newTarea.IdUsuario = selectedUsuario.Id;
+
+
+                HttpRequestMessage message = new HttpRequestMessage(HttpMethod.Post, apiUrl.BuilderURIService($"/Tareas/CrearTarea"));
+
+                var jsonContent = new StringContent(JsonConvert.SerializeObject(newTarea), System.Text.Encoding.UTF8, "application/json");
+
+                message.Content = jsonContent;
+
+                message.Headers.Add("ApiKey", $"{apiKey}");
+
+                var response = await Http.SendAsync(message);
+
+
+                if (response.IsSuccessStatusCode)
+                {
+                    string result = await response.Content.ReadAsStringAsync();
+                    var objResult = JsonConvert.DeserializeObject<StatusResponse>(result);
+
+                    if (objResult.Success)
+                    {
+                        await LoadTareas(selectedUsuario.Id);
+                        newTarea = new TareaCreateDTO();
+                    }
+                    else
+                    {
+                        errorMessage = objResult.Message;
+                    }
+                }
+            }
+            else
+            {
+                errorMessage = "Ocurrio un error al crear la tarea en el servicio.";
+            }
+        }
+        catch
+        {
+            errorMessage = "Ocurrio un error al crear la tarea en la web.";
+        }
+
+
+    }
+
+    private async Task UpdateTarea()
+    {
+        try
+        {
+            if (selectedTarea != null)
+            {
+
+                var objUpdate = new TareaUpdateDTO()
+                    {
+                        Descripcion = selectedTarea.Descripcion,
+                        Eliminado = selectedTarea.Eliminado,
+                        FechaVencimiento = selectedTarea.FechaVencimiento,
+                        Finalizado = selectedTarea.Finalizado,
+                        Id = selectedTarea.Id,
+                        IdPrioridad = selectedTarea.IdPrioridad,
+                        Tags = selectedTarea.Tags,
+                        Titulo = selectedTarea.Titulo
+                    };
+
+
+
+
+                HttpRequestMessage message = new HttpRequestMessage(HttpMethod.Put, apiUrl.BuilderURIService("/Tareas/ActualizarTarea"));
+
+
+                var jsonContent = new StringContent(JsonConvert.SerializeObject(objUpdate), System.Text.Encoding.UTF8, "application/json");
+
+                message.Content = jsonContent;
+
+                message.Headers.Add("ApiKey", $"{apiKey}");
+
+                var response = await Http.SendAsync(message);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    string result = await response.Content.ReadAsStringAsync();
+                    var objResult = JsonConvert.DeserializeObject<StatusResponse>(result);
+
+                    if (objResult.Success)
+                    {
+                        selectedTarea = null;
+                        await LoadTareas(selectedUsuario.Id);
+                    }
+                    else
+                    {
+                        errorMessage = objResult.Message;
+                    }
+                }
+            }
+            else
+            {
+
+                errorMessage = "Ocurrio un error al actualizar la tarea en la servicio.";
+            }
+        }
+        catch
+        {
+            errorMessage = "Ocurrio un error al actualizar la tarea en la web.";
+        }
+
+
+    }
+
+    private async Task DeleteTarea(int id)
+    {
+        try
+        {
+            var request = new UsuarioFilterDTO()
+                {
+                    Id = id
+                };
+
+            HttpRequestMessage message = new HttpRequestMessage(HttpMethod.Delete, apiUrl.BuilderURIService("Tareas/BorrarTarea"));
+
+            var jsonContent = new StringContent(JsonConvert.SerializeObject(request), System.Text.Encoding.UTF8, "application/json");
+
+            message.Content = jsonContent;
+
+            message.Headers.Add("ApiKey", $"{apiKey}");
+
+            var response = await Http.SendAsync(message);
+
+            if (response.IsSuccessStatusCode)
+            {
+                string result = await response.Content.ReadAsStringAsync();
+                var objResult = JsonConvert.DeserializeObject<StatusResponse>(result);
+
+                if (objResult.Success)
+                {
+                    await LoadTareas(selectedUsuario.Id);
+                }
+                else
+                {
+                    errorMessage = objResult.Message;
+                }
+
+
+            }
+            else
+            {
+                errorMessage = "Ocurrio un problema al elminar la tarea en el servicio.";
+
+            }
+        }
+        catch
+        {
+            errorMessage = "Ocurrio un error  elminar la tarea en la web.";
+        }
+    }
+
+    private async Task LoadPrioridades()
+    {
+        try
+        {
+
+            HttpRequestMessage message = new HttpRequestMessage(HttpMethod.Get, apiUrl.BuilderURIService("Prioridades/ListaPrioridad"));
+
+
+            message.Headers.Add("ApiKey", $"{apiKey}");
+
+            var response = await Http.SendAsync(message);
+
+
+            if (response.IsSuccessStatusCode)
+            {
+                string result = await response.Content.ReadAsStringAsync();
+                var objResult = JsonConvert.DeserializeObject<StatusResponse<IEnumerable<Prioridad>>>(result);
+
+
+                if (objResult.Success)
+                {
+                    prioridades = objResult.Data.ToList();
+                }
+                else
+                {
+                    errorMessage = objResult.Message;
+                }
+            }
+            else
+            {
+                errorMessage = "Ocurrio un error al cargar las prioridades en la servicio.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Ocurrio un error al cargar las prioridades en la web.";
+        }
+    }
+
+    private async Task ShowTareas(Usuario usuario)
+    {
+        selectedUsuario = usuario;
+        showTareas = true;
+        await LoadTareas(usuario.Id);
+    }
+}
+
+<h3>Usuarios</h3>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">
+        @errorMessage
+    </div>
+}
+
+
+<div>
+    <h4>Create New Usuario</h4>
+    <input @bind="newUsuario.Nombre" placeholder="Nombre" />
+    <input @bind="newUsuario.Apellido" placeholder="Apellido" />
+    <input @bind="newUsuario.Correo" placeholder="Correo" />
+    <input @bind="newUsuario.Telefono" placeholder="Telefono" />
+    <button @onclick="CreateUsuario">Create</button>
+</div>
+
+@if (usuarios?.Count > 0)
+{
+    <h4>Usuarios List</h4>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Apellido</th>
+                <th>Correo</th>
+                <th>Telefono</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var usuario in usuarios)
+            {
+                <tr>
+                    <td>@usuario.Nombre</td>
+                    <td>@usuario.Apellido</td>
+                    <td>@usuario.Correo</td>
+                    <td>@usuario.Telefono</td>
+                    <td>
+                        <button @onclick="() => EditUsuario(usuario)">Edit</button>
+                        <button @onclick="() => DeleteUsuario(usuario.Id)">Delete</button>
+                        <button @onclick="async () => await ShowTareas(usuario)">Tareas</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @if (selectedUsuario != null && !showTareas)
+    {
+        <h4>Edit Usuario</h4>
+        <div>
+            <input @bind="selectedUsuario.Nombre" placeholder="Nombre" />
+            <input @bind="selectedUsuario.Apellido" placeholder="Apellido" />
+            <input @bind="selectedUsuario.Correo" placeholder="Correo" />
+            <input @bind="selectedUsuario.Telefono" placeholder="Telefono" />
+            <button @onclick="UpdateUsuario">Update</button>
+            <button @onclick="() => selectedUsuario = null">Cancel</button>
+        </div>
+    }
+
+    @if (selectedUsuario != null && showTareas)
+    {
+        <h4>Manage Tareas for @selectedUsuario.Nombre</h4>
+        <div>
+            <input @bind="newTarea.Titulo" placeholder="Titulo" />
+            <input @bind="newTarea.Descripcion" placeholder="Descripcion" />
+            <input type="date" @bind="newTarea.FechaVencimiento" />
+            <input type="checkbox" @bind="newTarea.Finalizado" /> Finalizado
+            <input type="checkbox" @bind="newTarea.Eliminado" /> Eliminado
+            <input @bind="newTarea.Tags" placeholder="Tags (comma-separated)" />
+            <select @bind="newTarea.IdPrioridad">
+                @foreach (var prioridad in prioridades)
+                {
+                    <option value="@prioridad.Id">@prioridad.Nombre</option>
+                }
+            </select>
+            <button @onclick="CreateTarea">Create Tarea</button>
+        </div>
+
+        @if (tareas?.Count > 0)
+        {
+            <h4>Lista de Tareas</h4>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Titulo</th>
+                        <th>Descripcion</th>
+                        <th>Fecha Vencimiento</th>
+                        <th>Prioridad</th>
+                        <th>Finalizado</th>
+                        <th>Eliminado</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var tarea in tareas)
+                    {
+                        <tr>
+                            <td>@tarea.Titulo</td>
+                            <td>@tarea.Descripcion</td>
+                            <td>@tarea.FechaVencimiento.ToShortDateString()</td>
+                            <td>@tarea.Prioridad.Nombre</td>
+                            <td>@(tarea.Finalizado ? "Si" : "No")</td>
+                            <td>@(tarea.Eliminado ? "Si" : "No")</td>
+                            <td>
+                                <button @onclick="() => { selectedTarea = tarea; }">Edit</button>
+                                <button @onclick="() => DeleteTarea(tarea.Id)">Delete</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+        @if (selectedTarea != null)
+        {
+            <div>
+                <h4>Edit Tarea</h4>
+                <input @bind="selectedTarea.Titulo" placeholder="Titulo" />
+                <input @bind="selectedTarea.Descripcion" placeholder="Descripcion" />
+                <input type="date" @bind="selectedTarea.FechaVencimiento" />
+                <input type="checkbox" @bind="selectedTarea.Finalizado" />
+                Finalizado
+                <input type="checkbox" @bind="selectedTarea.Eliminado" /> Eliminado
+                <input @bind="selectedTarea.Tags" placeholder="Tags (comma-separated)" />
+                <select @bind="selectedTarea.IdPrioridad">
+                    @foreach (var prioridad in prioridades)
+                    {
+                        <option value="@prioridad.Id">@prioridad.Nombre</option>
+                    }
+                </select>
+                <button @onclick="UpdateTarea">Update</button>
+                <button @onclick="() => selectedTarea = null">Cancelar</button>
+            </div>
+
+        }
+    }
+}
