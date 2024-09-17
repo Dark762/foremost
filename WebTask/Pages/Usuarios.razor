@@ -452,6 +452,13 @@
         showTareas = true;
         await LoadTareas(usuario.Id);
     }
+
+    private void CancelTareas()
+    {
+
+        selectedUsuario = null;
+        showTareas = false;
+    }
 }
 
 <h3>Usuarios</h3>
@@ -534,6 +541,7 @@
                 }
             </select>
             <button @onclick="CreateTarea">Create Tarea</button>
+            <button @onclick="CancelTareas">Cerrar</button>
         </div>
 
         @if (tareas?.Count > 0)
