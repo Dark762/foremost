@@ -470,20 +470,21 @@
     </div>
 }
 
-
-<div>
+<div class="mb-4">
     <h4>Create New Usuario</h4>
-    <input @bind="newUsuario.Nombre" placeholder="Nombre" />
-    <input @bind="newUsuario.Apellido" placeholder="Apellido" />
-    <input @bind="newUsuario.Correo" placeholder="Correo" />
-    <input @bind="newUsuario.Telefono" placeholder="Telefono" />
-    <button @onclick="CreateUsuario">Create</button>
+    <div class="form-group">
+        <input @bind="newUsuario.Nombre" class="form-control mb-2" placeholder="Nombre" />
+        <input @bind="newUsuario.Apellido" class="form-control mb-2" placeholder="Apellido" />
+        <input @bind="newUsuario.Correo" class="form-control mb-2" placeholder="Correo" />
+        <input @bind="newUsuario.Telefono" class="form-control mb-2" placeholder="Telefono" />
+        <button @onclick="CreateUsuario" class="btn btn-primary">Create</button>
+    </div>
 </div>
 
 @if (usuarios?.Count > 0)
 {
     <h4>Usuarios List</h4>
-    <table class="table">
+    <table class="table table-striped">
         <thead>
             <tr>
                 <th>Nombre</th>
@@ -502,9 +503,9 @@
                     <td>@usuario.Correo</td>
                     <td>@usuario.Telefono</td>
                     <td>
-                        <button @onclick="() => EditUsuario(usuario)">Edit</button>
-                        <button @onclick="() => DeleteUsuario(usuario.Id)">Delete</button>
-                        <button @onclick="async () => await ShowTareas(usuario)">Tareas</button>
+                        <button @onclick="() => EditUsuario(usuario)" class="btn btn-warning btn-sm">Edit</button>
+                        <button @onclick="() => DeleteUsuario(usuario.Id)" class="btn btn-danger btn-sm">Delete</button>
+                        <button @onclick="async () => await ShowTareas(usuario)" class="btn btn-info btn-sm">Tareas</button>
                     </td>
                 </tr>
             }
@@ -514,40 +515,46 @@
     @if (selectedUsuario != null && !showTareas)
     {
         <h4>Edit Usuario</h4>
-        <div>
-            <input @bind="selectedUsuario.Nombre" placeholder="Nombre" />
-            <input @bind="selectedUsuario.Apellido" placeholder="Apellido" />
-            <input @bind="selectedUsuario.Correo" placeholder="Correo" />
-            <input @bind="selectedUsuario.Telefono" placeholder="Telefono" />
-            <button @onclick="UpdateUsuario">Update</button>
-            <button @onclick="() => selectedUsuario = null">Cancel</button>
+        <div class="form-group">
+            <input @bind="selectedUsuario.Nombre" class="form-control mb-2" placeholder="Nombre" />
+            <input @bind="selectedUsuario.Apellido" class="form-control mb-2" placeholder="Apellido" />
+            <input @bind="selectedUsuario.Correo" class="form-control mb-2" placeholder="Correo" />
+            <input @bind="selectedUsuario.Telefono" class="form-control mb-2" placeholder="Telefono" />
+            <button @onclick="UpdateUsuario" class="btn btn-success">Update</button>
+            <button @onclick="() => selectedUsuario = null" class="btn btn-secondary">Cancel</button>
         </div>
     }
 
     @if (selectedUsuario != null && showTareas)
     {
         <h4>Manage Tareas for @selectedUsuario.Nombre</h4>
-        <div>
-            <input @bind="newTarea.Titulo" placeholder="Titulo" />
-            <input @bind="newTarea.Descripcion" placeholder="Descripcion" />
-            <input type="date" @bind="newTarea.FechaVencimiento" />
-            <input type="checkbox" @bind="newTarea.Finalizado" /> Finalizado
-            <input type="checkbox" @bind="newTarea.Eliminado" /> Eliminado
-            <input @bind="newTarea.Tags" placeholder="Tags (comma-separated)" />
-            <select @bind="newTarea.IdPrioridad">
+        <div class="form-group">
+            <input @bind="newTarea.Titulo" class="form-control mb-2" placeholder="Titulo" />
+            <input @bind="newTarea.Descripcion" class="form-control mb-2" placeholder="Descripcion" />
+            <input type="date" @bind="newTarea.FechaVencimiento" class="form-control mb-2" />
+            <div class="form-check">
+                <input type="checkbox" @bind="newTarea.Finalizado" class="form-check-input" id="finalizado" />
+                <label class="form-check-label" for="finalizado">Finalizado</label>
+            </div>
+            <div class="form-check">
+                <input type="checkbox" @bind="newTarea.Eliminado" class="form-check-input" id="eliminado" />
+                <label class="form-check-label" for="eliminado">Eliminado</label>
+            </div>
+            <input @bind="newTarea.Tags" class="form-control mb-2" placeholder="Tags (comma-separated)" />
+            <select @bind="newTarea.IdPrioridad" class="form-select mb-2">
                 @foreach (var prioridad in prioridades)
                 {
                     <option value="@prioridad.Id">@prioridad.Nombre</option>
                 }
             </select>
-            <button @onclick="CreateTarea">Create Tarea</button>
-            <button @onclick="CancelTareas">Cerrar</button>
+            <button @onclick="CreateTarea" class="btn btn-primary">Create Tarea</button>
+            <button @onclick="CancelTareas" class="btn btn-secondary">Cerrar</button>
         </div>
 
         @if (tareas?.Count > 0)
         {
             <h4>Lista de Tareas</h4>
-            <table class="table">
+            <table class="table table-striped">
                 <thead>
                     <tr>
                         <th>Titulo</th>
@@ -570,8 +577,8 @@
                             <td>@(tarea.Finalizado ? "Si" : "No")</td>
                             <td>@(tarea.Eliminado ? "Si" : "No")</td>
                             <td>
-                                <button @onclick="() => { selectedTarea = tarea; }">Edit</button>
-                                <button @onclick="() => DeleteTarea(tarea.Id)">Delete</button>
+                                <button @onclick="() => { selectedTarea = tarea; }" class="btn btn-warning btn-sm">Edit</button>
+                                <button @onclick="() => DeleteTarea(tarea.Id)" class="btn btn-danger btn-sm">Delete</button>
                             </td>
                         </tr>
                     }
@@ -581,25 +588,29 @@
 
         @if (selectedTarea != null)
         {
-            <div>
+            <div class="form-group">
                 <h4>Edit Tarea</h4>
-                <input @bind="selectedTarea.Titulo" placeholder="Titulo" />
-                <input @bind="selectedTarea.Descripcion" placeholder="Descripcion" />
-                <input type="date" @bind="selectedTarea.FechaVencimiento" />
-                <input type="checkbox" @bind="selectedTarea.Finalizado" />
-                Finalizado
-                <input type="checkbox" @bind="selectedTarea.Eliminado" /> Eliminado
-                <input @bind="selectedTarea.Tags" placeholder="Tags (comma-separated)" />
-                <select @bind="selectedTarea.IdPrioridad">
+                <input @bind="selectedTarea.Titulo" class="form-control mb-2" placeholder="Titulo" />
+                <input @bind="selectedTarea.Descripcion" class="form-control mb-2" placeholder="Descripcion" />
+                <input type="date" @bind="selectedTarea.FechaVencimiento" class="form-control mb-2" />
+                <div class="form-check">
+                    <input type="checkbox" @bind="selectedTarea.Finalizado" class="form-check-input" id="edit-finalizado" />
+                    <label class="form-check-label" for="edit-finalizado">Finalizado</label>
+                </div>
+                <div class="form-check">
+                    <input type="checkbox" @bind="selectedTarea.Eliminado" class="form-check-input" id="edit-eliminado" />
+                    <label class="form-check-label" for="edit-eliminado">Eliminado</label>
+                </div>
+                <input @bind="selectedTarea.Tags" class="form-control mb-2" placeholder="Tags (comma-separated)" />
+                <select @bind="selectedTarea.IdPrioridad" class="form-select mb-2">
                     @foreach (var prioridad in prioridades)
                     {
                         <option value="@prioridad.Id">@prioridad.Nombre</option>
                     }
                 </select>
-                <button @onclick="UpdateTarea">Update</button>
-                <button @onclick="() => selectedTarea = null">Cancelar</button>
+                <button @onclick="UpdateTarea" class="btn btn-success">Update</button>
+                <button @onclick="() => selectedTarea = null" class="btn btn-secondary">Cancelar</button>
             </div>
-
         }
     }
 }
