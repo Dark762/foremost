@@ -7,6 +7,8 @@ using System.Reflection;
 using API_Task.Middleware;
 using API_Task.DbContextTask.Impl;
 using System.Net;
+using Microsoft.OpenApi.Models;
+using System.Web;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,12 +35,40 @@ builder.Services.AddControllers(options =>
 
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+var apiKeyValue = builder.Configuration.GetSection("ApiKey").Value;
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString));
 
 
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
+
+
+    c.AddSecurityDefinition("ApiKey", new OpenApiSecurityScheme
+    {
+        Description = "API Key necesita para acceder a los endpoints el es ApiKey: abc123456",
+        Name = "ApiKey",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "ApiKey"
+    });
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "ApiKey"
+                }
+            },
+            new List<string>()
+        }
+    });
+});
 
 //configure CORS
 builder.Services.AddCorsExtensionsCustom(builder.Configuration);
@@ -85,6 +115,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
+
+        var escapedApiKeyValue = HttpUtility.JavaScriptStringEncode(apiKeyValue);
+
+        
+        c.ConfigObject.AdditionalItems["requestInterceptor"] = $"function (request) {{ request.headers['ApiKey'] = '{escapedApiKeyValue}'; return request; }}";
+       
     });
 }
 

@@ -43,6 +43,12 @@ namespace API_Task.Middleware
                 return;
             }
 
+            if (!providedApiKey.Equals(expectedApiKey)) {
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                await WriteJsonResponse(context, "Unauthorized: API key Invalid.");
+                return;
+            }
+
         
 
 
