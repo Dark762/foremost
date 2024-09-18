@@ -8,9 +8,10 @@
 
             services.AddCors(o => o.AddPolicy("MyPolicy", builder =>
             {
-                builder.WithOrigins("https://localhost:44331")
+                builder.WithOrigins(configuration.GetSection("UrlWebCORS").Value)
                        .AllowAnyMethod()
-                       .AllowAnyHeader();
+                       .AllowAnyHeader()
+                        .WithExposedHeaders("ApiKey");
 
             }));
 

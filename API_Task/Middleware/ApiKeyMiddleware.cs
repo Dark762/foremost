@@ -29,29 +29,23 @@ namespace API_Task.Middleware
 
             var expectedApiKey = _configuration["ApiKey"];
 
-            //if (string.IsNullOrWhiteSpace(expectedApiKey))
-            //{
-            //    context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-            //    await context.Response.WriteAsync("API key is not configured.");
-            //    return;
-            //}
+            if (string.IsNullOrWhiteSpace(expectedApiKey))
+            {
+                context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                await context.Response.WriteAsync("API key is not configured.");
+                return;
+            }
 
-            //if (!context.Request.Headers.TryGetValue(ApiKeyHeaderName, out var providedApiKey))
-            //{
-            //    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            //    await WriteJsonResponse(context, "Unauthorized: Missing API key.");
-            //    return;
-            //}
+            if (!context.Request.Headers.TryGetValue(ApiKeyHeaderName, out var providedApiKey))
+            {
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                await WriteJsonResponse(context, "Unauthorized: Missing API key.");
+                return;
+            }
 
-            //var apiKeyParts = providedApiKey.ToString().Split(' ');
-            //if (apiKeyParts.Length != 2 || apiKeyParts[0] != "Bearer" || apiKeyParts[1] != expectedApiKey)
-            //{
-            //    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            //    await WriteJsonResponse(context, "Unauthorized: Invalid API key.");
-            //    return;
-            //}
+        
 
-           
+
             await _next(context);
         }
 

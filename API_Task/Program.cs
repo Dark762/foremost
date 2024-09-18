@@ -6,6 +6,7 @@ using Microsoft.Extensions.Hosting;
 using System.Reflection;
 using API_Task.Middleware;
 using API_Task.DbContextTask.Impl;
+using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -52,6 +53,25 @@ builder.Services.AddDIExtension(Assembly.GetExecutingAssembly());
 var app = builder.Build();
 
 
+
+app.UseCors("MyPolicy");
+
+app.Use(async (context, next) =>
+{
+    if (context.Request.Method == "OPTIONS")
+    {
+        context.Response.Headers.Add("Access-Control-Allow-Origin", "*");
+        context.Response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
+        context.Response.Headers.Add("Access-Control-Allow-Headers", "Content-Type, ApiKey");
+        context.Response.StatusCode = (int)HttpStatusCode.OK;
+        await context.Response.CompleteAsync();
+    }
+    else
+    {
+        await next();
+    }
+});
+
 if (app.Environment.IsDevelopment())
 {
 
@@ -68,6 +88,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+
 // Apply migrations on startup
 using (var scope = app.Services.CreateScope())
 {
@@ -76,16 +97,15 @@ using (var scope = app.Services.CreateScope())
 }
 app.UseHttpsRedirection();
 
+
+
 app.UseRouting();
-
-app.UseCors("MyPolicy");
-
-// Configure the HTTP request pipeline.
-
-app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
-app.MapControllers();
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapControllers();
+});
 
 app.Run();
